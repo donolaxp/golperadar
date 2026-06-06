@@ -2,3 +2,4 @@ flask
 Flask-Limiter
 requests
 validators
+gunicorn
