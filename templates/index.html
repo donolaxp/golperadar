@@ -1,103 +1,288 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>GolpeRadar</title>
-  <style>
-    body { font-family: Arial, sans-serif; background: #f4f4f9; color: #222; margin: 0; padding: 0; }
-    .container { max-width: 720px; margin: 40px auto; padding: 24px; background: #fff; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.08); }
-    h1 { margin-top: 0; color: #1c3d62; }
-    p { line-height: 1.6; }
-    form { margin-top: 24px; display: grid; gap: 14px; }
-    input[type="url"] { width: 100%; padding: 12px 14px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 1rem; }
-    button { width: fit-content; padding: 12px 22px; background: #1c3d62; border: none; color: #fff; border-radius: 8px; cursor: pointer; font-size: 1rem; }
-    button:hover { background: #163f6f; }
-    .result { margin-top: 24px; padding: 18px; border-radius: 12px; background: #f8fafc; border: 1px solid #d1d5db; }
-    .status { font-weight: 700; margin-bottom: 8px; }
-    .score { font-size: 1.25rem; margin-bottom: 12px; }
-    .avisos { margin: 0; padding-left: 18px; }
-    .avisos li { margin-bottom: 6px; }
-    .hidden { display: none; }
-    .error { color: #b91c1c; }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GolpeRadar - Threat Scanner</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&display=swap');
+        
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body { 
+            font-family: 'Orbitron', monospace; 
+            background: #0a0a0a; 
+            color: #00ff41;
+            min-height: 100vh;
+            background-image: 
+                radial-gradient(circle at 20% 50%, #001a00 0%, transparent 50%),
+                radial-gradient(circle at 80% 20%, #1a0000 0%, transparent 50%);
+            overflow-x: hidden;
+        }
+        
+        .scan-line {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 2px;
+            background: #00ff41;
+            box-shadow: 0 0 10px #00ff41;
+            animation: scan 3s linear infinite;
+            z-index: 1000;
+        }
+        
+        @keyframes scan {
+            0% { top: 0%; opacity: 1; }
+            100% { top: 100%; opacity: 0; }
+        }
+        
+        .container { 
+            max-width: 700px; 
+            margin: 0 auto; 
+            padding: 40px 20px;
+            position: relative;
+            z-index: 1;
+        }
+        
+        h1 { 
+            font-size: 3rem;
+            font-weight: 900;
+            text-align: center;
+            margin-bottom: 10px;
+            text-shadow: 0 0 20px #00ff41;
+            animation: flicker 2s infinite alternate;
+        }
+        
+        @keyframes flicker {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.8; }
+        }
+        
+        .subtitle {
+            text-align: center;
+            color: #888;
+            margin-bottom: 40px;
+            font-size: 0.9rem;
+            letter-spacing: 2px;
+        }
+        
+        .input-box {
+            background: rgba(0, 255, 65, 0.05);
+            border: 1px solid #00ff41;
+            border-radius: 0;
+            padding: 30px;
+            margin-bottom: 30px;
+            box-shadow: 0 0 30px rgba(0, 255, 65, 0.2);
+        }
+        
+        input { 
+            width: 100%; 
+            padding: 15px; 
+            background: #000;
+            border: 1px solid #00ff41;
+            color: #00ff41;
+            font-family: 'Orbitron', monospace;
+            font-size: 14px;
+            margin-bottom: 15px;
+        }
+        
+        input:focus {
+            outline: none;
+            box-shadow: 0 0 15px #00ff41;
+        }
+        
+        button { 
+            width: 100%;
+            padding: 15px; 
+            background: #00ff41;
+            color: #000;
+            border: none;
+            font-family: 'Orbitron', monospace;
+            font-weight: 700;
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-transform: uppercase;
+        }
+        
+        button:hover {
+            background: #000;
+            color: #00ff41;
+            box-shadow: 0 0 20px #00ff41;
+        }
+        
+        .resultado {
+            background: rgba(0, 0, 0, 0.8);
+            border: 1px solid #333;
+            padding: 30px;
+            margin-top: 20px;
+            display: none;
+        }
+        
+        .resultado.perigoso {
+            border-color: #ff0000;
+            box-shadow: 0 0 30px rgba(255, 0, 0, 0.5);
+            animation: alert 0.5s infinite;
+        }
+        
+        .resultado.seguro {
+            border-color: #00ff41;
+            box-shadow: 0 0 30px rgba(0, 255, 65, 0.5);
+        }
+        
+        .resultado.atencao {
+            border-color: #ffaa00;
+            box-shadow: 0 0 30px rgba(255, 170, 0, 0.5);
+        }
+        
+        @keyframes alert {
+            0%, 100% { border-color: #ff0000; }
+            50% { border-color: #800000; }
+        }
+        
+        .status {
+            font-size: 2rem;
+            font-weight: 900;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        
+        .status.perigoso { color: #ff0000; text-shadow: 0 0 20px #ff0000; }
+        .status.seguro { color: #00ff41; text-shadow: 0 0 20px #00ff41; }
+        .status.atencao { color: #ffaa00; text-shadow: 0 0 20px #ffaa00; }
+        
+        .score-bar {
+            width: 100%;
+            height: 30px;
+            background: #111;
+            border: 1px solid #333;
+            margin: 20px 0;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .score-fill {
+            height: 100%;
+            transition: width 1s ease-out;
+            position: relative;
+        }
+        
+        .score-fill.perigoso { background: #ff0000; box-shadow: 0 0 20px #ff0000; }
+        .score-fill.seguro { background: #00ff41; box-shadow: 0 0 20px #00ff41; }
+        .score-fill.atencao { background: #ffaa00; box-shadow: 0 0 20px #ffaa00; }
+        
+        .score-text {
+            position: absolute;
+            width: 100%;
+            text-align: center;
+            line-height: 30px;
+            font-weight: 700;
+            color: #fff;
+            text-shadow: 0 0 5px #000;
+        }
+        
+        .avisos {
+            margin-top: 20px;
+        }
+        
+        .avisos li {
+            list-style: none;
+            padding: 10px;
+            margin: 5px 0;
+            background: rgba(255, 0, 0, 0.1);
+            border-left: 3px solid #ff0000;
+        }
+    </style>
 </head>
 <body>
-  <div class="container">
-    <h1>GolpeRadar</h1>
-    <p>Digite qualquer URL abaixo para que o sistema analise se ela parece segura ou suspeita.</p>
-
-    <form id="scan-form">
-      <label for="url-input">URL para analisar</label>
-      <input id="url-input" type="url" placeholder="https://exemplo.com" required />
-      <button type="submit">Analisar URL</button>
-    </form>
-
-    <div id="message" class="result hidden"></div>
-    <div id="result" class="result hidden">
-      <div class="status" id="result-status"></div>
-      <div class="score" id="result-score"></div>
-      <div>
-        <strong>Avisos:</strong>
-        <ul id="result-avisos" class="avisos"></ul>
-      </div>
+    <div class="scan-line"></div>
+    <div class="container">
+        <h1>☠️ GOLPERADAR ☠️</h1>
+        <p class="subtitle">[ THREAT DETECTION SYSTEM v1.0 ]</p>
+        
+        <div class="input-box">
+            <input type="text" id="url" placeholder="COLE A URL ALVO AQUI...">
+            <button onclick="analisar()">[ INICIAR SCAN ]</button>
+        </div>
+        
+        <div id="resultado" class="resultado">
+            <div id="status" class="status"></div>
+            <div class="score-bar">
+                <div id="score-fill" class="score-fill">
+                    <div id="score-text" class="score-text"></div>
+                </div>
+            </div>
+            <div class="avisos">
+                <ul id="avisos-list"></ul>
+            </div>
+        </div>
     </div>
-  </div>
 
-  <script>
-    const form = document.getElementById('scan-form');
-    const urlInput = document.getElementById('url-input');
-    const resultBox = document.getElementById('result');
-    const messageBox = document.getElementById('message');
-    const statusEl = document.getElementById('result-status');
-    const scoreEl = document.getElementById('result-score');
-    const avisosEl = document.getElementById('result-avisos');
-
-    form.addEventListener('submit', async event => {
-      event.preventDefault();
-      resultBox.classList.add('hidden');
-      messageBox.classList.add('hidden');
-      avisosEl.innerHTML = '';
-
-      const url = urlInput.value.trim();
-      if (!url) {
-        showMessage('Informe uma URL válida.', true);
-        return;
-      }
-
-      try {
-        const response = await fetch('/analisar', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ url })
-        });
-
-        const data = await response.json();
-
-        if (!response.ok) {
-          showMessage(data.avisos ? data.avisos.join(' ') : 'Erro ao analisar a URL.', true);
-          return;
+    <script>
+        async function analisar() {
+            const url = document.getElementById('url').value;
+            const btn = document.querySelector('button');
+            btn.textContent = '[ ESCANEANDO... ]';
+            btn.disabled = true;
+            
+            try {
+                const response = await fetch('/analisar', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({url: url})
+                });
+                
+                const data = await response.json();
+                const resultado = document.getElementById('resultado');
+                const status = document.getElementById('status');
+                const scoreFill = document.getElementById('score-fill');
+                const scoreText = document.getElementById('score-text');
+                const avisosList = document.getElementById('avisos-list');
+                
+                // Define classe por status
+                resultado.className = 'resultado';
+                if (data.status === 'Perigoso') {
+                    resultado.classList.add('perigoso');
+                    status.className = 'status perigoso';
+                    status.innerHTML = '☠️ AMEAÇA DETECTADA ☠️';
+                    scoreFill.className = 'score-fill perigoso';
+                } else if (data.status === 'Seguro') {
+                    resultado.classList.add('seguro');
+                    status.className = 'status seguro';
+                    status.innerHTML = '🛡️ SISTEMA SEGURO 🛡️';
+                    scoreFill.className = 'score-fill seguro';
+                } else {
+                    resultado.classList.add('atencao');
+                    status.className = 'status atencao';
+                    status.innerHTML = '⚠️ ALERTA DE RISCO ⚠️';
+                    scoreFill.className = 'score-fill atencao';
+                }
+                
+                // Anima barra
+                setTimeout(() => {
+                    scoreFill.style.width = data.score + '%';
+                    scoreText.textContent = `THREAT LEVEL: ${data.score}/100`;
+                }, 100);
+                
+                // Avisos
+                avisosList.innerHTML = '';
+                data.avisos.forEach(aviso => {
+                    const li = document.createElement('li');
+                    li.textContent = `> ${aviso}`;
+                    avisosList.appendChild(li);
+                });
+                
+                resultado.style.display = 'block';
+                
+            } catch (error) {
+                alert('ERRO NO SCAN: ' + error);
+            }
+            
+            btn.textContent = '[ INICIAR SCAN ]';
+            btn.disabled = false;
         }
-
-        statusEl.textContent = `Status: ${data.status}`;
-        scoreEl.textContent = `Score: ${data.score} / 100`;
-        data.avisos.forEach(aviso => {
-          const li = document.createElement('li');
-          li.textContent = aviso;
-          avisosEl.appendChild(li);
-        });
-        resultBox.classList.remove('hidden');
-      } catch (error) {
-        showMessage('Erro na conexão com o servidor. Tente novamente.', true);
-      }
-    });
-
-    function showMessage(text, isError = false) {
-      messageBox.textContent = text;
-      messageBox.className = `result ${isError ? 'error' : ''}`;
-      messageBox.classList.remove('hidden');
-    }
-  </script>
+    </script>
 </body>
 </html>
 
