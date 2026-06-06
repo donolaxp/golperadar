@@ -1,13 +1,23 @@
 from flask import Flask, render_template, request, jsonify
 import validators
+from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
 
 app = Flask(__name__)
+
+# Limite: 10 análises por minuto por IP
+limiter = Limiter(
+    get_remote_address,
+    app=app,
+    default_limits=["50 per hour"]
+)
 
 @app.route('/')
 def index():
     return render_template('index.html')
 
 @app.route('/analisar', methods=['POST'])
+@limiter.limit("10 per minute")
 def analisar():
     data = request.get_json()
     url = data.get('url', '').strip()
