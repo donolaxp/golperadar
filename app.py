@@ -1,10 +1,21 @@
-from flask import Flask, render_template_string, request
+from flask import Flask, render_template, request, jsonify  ✅ CORRETA
 import requests
 import whois
 from datetime import datetime
 import re
 
 app = Flask(__name__)
+
+@app.route('/')
+def home():
+    return render_template('index.html')  # ✅ ESSAS 3 LINHAS NOVAS
+
+@app.route('/verificar', methods=['POST'])
+def verificar():
+    data = request.get_json()
+    url = data.get('url', '')
+    resultado = analisar_url(url)  # Usa sua função que já existe
+    return jsonify(resultado)
 
 def analisar_url(url):
     resultado = {
