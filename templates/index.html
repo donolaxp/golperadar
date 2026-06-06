@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>GolpeRadar</title>
+  <style>
+    body { font-family: Arial, sans-serif; background: #f4f4f9; color: #222; margin: 0; padding: 0; }
+    .container { max-width: 720px; margin: 40px auto; padding: 24px; background: #fff; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.08); }
+    h1 { margin-top: 0; color: #1c3d62; }
+    p { line-height: 1.6; }
+    form { margin-top: 24px; display: grid; gap: 14px; }
+    input[type="url"] { width: 100%; padding: 12px 14px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 1rem; }
+    button { width: fit-content; padding: 12px 22px; background: #1c3d62; border: none; color: #fff; border-radius: 8px; cursor: pointer; font-size: 1rem; }
+    button:hover { background: #163f6f; }
+    .result { margin-top: 24px; padding: 18px; border-radius: 12px; background: #f8fafc; border: 1px solid #d1d5db; }
+    .status { font-weight: 700; margin-bottom: 8px; }
+    .score { font-size: 1.25rem; margin-bottom: 12px; }
+    .avisos { margin: 0; padding-left: 18px; }
+    .avisos li { margin-bottom: 6px; }
+    .hidden { display: none; }
+    .error { color: #b91c1c; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>GolpeRadar</h1>
+    <p>Digite qualquer URL abaixo para que o sistema analise se ela parece segura ou suspeita.</p>
+
+    <form id="scan-form">
+      <label for="url-input">URL para analisar</label>
+      <input id="url-input" type="url" placeholder="https://exemplo.com" required />
+      <button type="submit">Analisar URL</button>
+    </form>
+
+    <div id="message" class="result hidden"></div>
+    <div id="result" class="result hidden">
+      <div class="status" id="result-status"></div>
+      <div class="score" id="result-score"></div>
+      <div>
+        <strong>Avisos:</strong>
+        <ul id="result-avisos" class="avisos"></ul>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const form = document.getElementById('scan-form');
+    const urlInput = document.getElementById('url-input');
+    const resultBox = document.getElementById('result');
+    const messageBox = document.getElementById('message');
+    const statusEl = document.getElementById('result-status');
+    const scoreEl = document.getElementById('result-score');
+    const avisosEl = document.getElementById('result-avisos');
+
+    form.addEventListener('submit', async event => {
+      event.preventDefault();
+      resultBox.classList.add('hidden');
+      messageBox.classList.add('hidden');
+      avisosEl.innerHTML = '';
+
+      const url = urlInput.value.trim();
+      if (!url) {
+        showMessage('Informe uma URL válida.', true);
+        return;
+      }
+
+      try {
+        const response = await fetch('/analisar', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ url })
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+          showMessage(data.avisos ? data.avisos.join(' ') : 'Erro ao analisar a URL.', true);
+          return;
+        }
+
+        statusEl.textContent = `Status: ${data.status}`;
+        scoreEl.textContent = `Score: ${data.score} / 100`;
+        data.avisos.forEach(aviso => {
+          const li = document.createElement('li');
+          li.textContent = aviso;
+          avisosEl.appendChild(li);
+        });
+        resultBox.classList.remove('hidden');
+      } catch (error) {
+        showMessage('Erro na conexão com o servidor. Tente novamente.', true);
+      }
+    });
+
+    function showMessage(text, isError = false) {
+      messageBox.textContent = text;
+      messageBox.className = `result ${isError ? 'error' : ''}`;
+      messageBox.classList.remove('hidden');
+    }
+  </script>
+</body>
+</html>
+
