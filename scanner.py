@@ -1,102 +1,155 @@
 import requests
+import socket
 import whois
+from urllib.parse import urlparse, quote
 from datetime import datetime
-import re
-import time
+
+# Lista de palavras que golpista AMA usar
+PALAVRAS_SUSPEITAS = [
+    'banco', 'brasil', 'seguro', 'gratis', 'promocao', 'urgente', 
+    'premio', 'ganhador', 'iphone', 'pix', 'bradesco', 'itau', 
+    'caixa', 'santander', 'nubank', 'receita', 'gov', 'serasa'
+]
+
+# Domínios oficiais de bancos BR pra comparar
+DOMINIOS_OFICIAIS = {
+    'bb.com.br': 'Banco do Brasil',
+    'bradesco.com.br': 'Bradesco',
+    'itau.com.br': 'Itaú',
+    'santander.com.br': 'Santander',
+    'caixa.gov.br': 'Caixa',
+    'nubank.com.br': 'Nubank'
+}
 
 def analisar_url(url):
+    if not url.startswith('http'):
+        url = 'https://' + url
+    
     resultado = {
         "url": url,
-        "score": 100,
-        "nivel": "Seguro",
-        "avisos": []
+        "dominio": "Erro",
+        "idade_dominio": "Erro",
+        "ssl_valido": "Erro",
+        "ip_real": "Erro",
+        "redirecionamentos": "Erro",
+        "risco": "INDEFINIDO",
+        "porcentagem": "0%",
+        "classe_risco": "risco-alto",
+        "link_reclame_aqui": "#",
+        "alerta_phishing": ""
     }
+    
+    pontos_risco = 0
+    dominio_existe = True
 
-    print(f"\n🔍 Escaneando: {url}")
-    print("=" * 50)
-
-    # 1. Checa idade do domínio
     try:
-        dominio = re.findall(r'https?://([^/]+)', url)[0]
-        print(f"Verificando domínio: {dominio}")
-        w = whois.whois(dominio)
+        parsed_url = urlparse(url)
+        dominio = parsed_url.netloc
+        if dominio.startswith('www.'):
+            dominio = dominio[4:]
+        resultado["dominio"] = dominio
+        resultado["link_reclame_aqui"] = f"https://www.reclameaqui.com.br/busca/?q={quote(dominio)}"
 
-        data_criacao = w.creation_date
-        if isinstance(data_criacao, list):
-            data_criacao = data_criacao[0]
+        # 1. IP Real - SE NÃO ACHAR, JÁ É ALTO RISCO
+        try:
+            ip = socket.gethostbyname(dominio)
+            resultado["ip_real"] = ip
+        except socket.gaierror:
+            resultado["ip_real"] = "Não encontrado - DOMÍNIO NÃO EXISTE"
+            pontos_risco = 100 # MATA DIRETO
+            dominio_existe = False
+        
+        # Se domínio nem existe, nem testa o resto
+        if dominio_existe:
+            # 2. Check Anti-Phishing v2.4
+            dominio_lower = dominio.lower()
+            
+            # Regra 1: Palavras suspeitas no domínio
+            palavras_encontradas = [p for p in PALAVRAS_SUSPEITAS if p in dominio_lower]
+            if palavras_encontradas:
+                pontos_risco += 40
+                resultado["alerta_phishing"] = f"Alerta: Palavras suspeitas detectadas: {', '.join(palavras_encontradas)}"
+            
+            # Regra 2: Se parece banco mas não é o oficial
+            for oficial in DOMINIOS_OFICIAIS:
+                if oficial.split('.')[0] in dominio_lower and dominio!= oficial:
+                    pontos_risco += 50
+                    resultado["alerta_phishing"] += f" | Possível phishing de {DOMINIOS_OFICIAIS[oficial]}. Site oficial: {oficial}"
 
-        dias = (datetime.now() - data_criacao).days
-        print(f"Domínio criado há {dias} dias")
+            # 3. Idade do Domínio via Whois
+            try:
+                w = whois.whois(dominio)
+                if w.creation_date:
+                    if isinstance(w.creation_date, list):
+                        creation_date = w.creation_date[0]
+                    else:
+                        creation_date = w.creation_date
+                    
+                    idade_dias = (datetime.now() - creation_date).days
+                    resultado["idade_dominio"] = f"{idade_dias} dias"
+                    
+                    if idade_dias < 30:
+                        pontos_risco += 30
+                    elif idade_dias < 180:
+                        pontos_risco += 15
+                else:
+                    resultado["idade_dominio"] = "Desconhecida / Protegida"
+                    pontos_risco += 10 # Whois bloqueado é suspeito
+            except Exception:
+                resultado["idade_dominio"] = "Desconhecida / Bloqueado"
+                pontos_risco += 10
 
-        if dias < 30:
-            resultado["score"] -= 50
-            resultado["avisos"].append(f"DOMÍNIO NOVO: Criado há {dias} dias. Golpista ama domínio novo.")
-        elif dias < 90:
-            resultado["score"] -= 20
-            resultado["avisos"].append(f"Domínio recente: {dias} dias.")
+            # 4. Verificar SSL
+            try:
+                r = requests.get(url, timeout=5, verify=True)
+                if r.url.startswith('https'):
+                    resultado["ssl_valido"] = "Sim"
+                else:
+                    resultado["ssl_valido"] = "Não"
+                    pontos_risco += 40
+            except requests.exceptions.SSLError:
+                resultado["ssl_valido"] = "Não - Certificado Inválido"
+                pontos_risco += 40
+            except Exception:
+                resultado["ssl_valido"] = "Não - Erro de Conexão"
+                pontos_risco += 40
+
+            # 5. Redirecionamentos
+            try:
+                r = requests.get(url, timeout=5, allow_redirects=True)
+                if len(r.history) > 1:
+                    resultado["redirecionamentos"] = f"Sim - {len(r.history)} saltos"
+                    pontos_risco += 20
+                else:
+                    resultado["redirecionamentos"] = "Não"
+            except Exception:
+                resultado["redirecionamentos"] = "Erro ao testar"
+
+        # 6. Cálculo Final de Risco - v2.4
+        if pontos_risco >= 100:
+            resultado["risco"] = "ALTO"
+            resultado["porcentagem"] = "100%"
+            resultado["classe_risco"] = "risco-alto"
+        elif pontos_risco == 0:
+            resultado["risco"] = "SEGURO"
+            resultado["porcentagem"] = "0%"
+            resultado["classe_risco"] = "risco-seguro"
+        elif pontos_risco < 30:
+            resultado["risco"] = "BAIXO"
+            resultado["porcentagem"] = f"{pontos_risco}%"
+            resultado["classe_risco"] = "risco-baixo"
+        elif pontos_risco < 70:
+            resultado["risco"] = "MÉDIO"
+            resultado["porcentagem"] = f"{pontos_risco}%"
+            resultado["classe_risco"] = "risco-medio"
+        else:
+            resultado["risco"] = "ALTO"
+            resultado["porcentagem"] = f"{pontos_risco}%"
+            resultado["classe_risco"] = "risco-alto"
+
     except Exception as e:
-        resultado["score"] -= 20
-        resultado["avisos"].append("Não consegui ver idade do domínio. Suspeito.")
-
-    # 2. Palavras de golpe no site
-    try:
-        print("Analisando conteúdo do site...")
-        r = requests.get(url, timeout=8, headers={'User-Agent': 'Mozilla/5.0'})
-        texto = r.text.lower()
-        golpes = ["ganhe dinheiro rápido", "lucro garantido", "método secreto", "vagas limitadas", "últimas horas", "clique aqui", "investimento sem risco"]
-        for palavra in golpes:
-            if palavra in texto:
-                resultado["score"] -= 25
-                resultado["avisos"].append(f'Termo suspeito encontrado: "{palavra}"')
-    except:
-        resultado["score"] -= 15
-        resultado["avisos"].append("Site demorou pra responder ou bloqueou. Estranho.")
-
-    # 3. Checa HTTPS
-    if not url.startswith("https://"):
-        resultado["score"] -= 30
-        resultado["avisos"].append("Site sem HTTPS. Dados não criptografados.")
-
-    # 4. Score final
-    if resultado["score"] < 40:
-        resultado["nivel"] = "PERIGO - Provável Golpe"
-    elif resultado["score"] < 70:
-        resultado["nivel"] = "ATENÇÃO - Suspeito"
+        resultado["url"] = f"Erro ao analisar: {str(e)}"
+        resultado["risco"] = "ALTO"
+        resultado["porcentagem"] = "100%"
 
     return resultado
-
-# Versão 1.1 - Loop infinito
-if __name__ == "__main__":
-    print("🔵 BEM-VINDO AO GOLPERADAR v1.1 - DONOLAXP SECURITY 🔵")
-    print("Digite 'sair' para encerrar o programa\n")
-
-    while True:
-        url_teste = input("Cole a URL pra testar: ")
-
-        if url_teste.lower() == 'sair':
-            print("\nEncerrando GolpeRadar. Valeu, DONOLAXP! 🚗💙")
-            break
-
-        if not url_teste.startswith(('http://', 'https://')):
-            url_teste = 'https://' + url_teste
-            print(f"Adicionando https:// → {url_teste}")
-
-        resultado = analisar_url(url_teste)
-
-        print("\n" + "=" * 50)
-        if resultado["score"] >= 70:
-            print(f"🟢 RESULTADO FINAL: {resultado['nivel']}")
-        elif resultado["score"] >= 40:
-            print(f"🟡 RESULTADO FINAL: {resultado['nivel']}")
-        else:
-            print(f"🔴 RESULTADO FINAL: {resultado['nivel']}")
-
-        print(f"SCORE: {resultado['score']}/100")
-        print("\nAVISOS:")
-        if resultado['avisos']:
-            for aviso in resultado['avisos']:
-                print(f"⚠️ {aviso}")
-        else:
-            print("✅ Nenhum aviso. Parece seguro.")
-        print("=" * 50 + "\n")
-        time.sleep(1)

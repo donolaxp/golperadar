@@ -1,0 +1,23 @@
+.botoes-extras {
+    margin-top: 20px;
+    display: flex;
+    gap: 10px;
+}
+
+.btn-reclame,.btn-virus {
+    background-color: #0a0a0a;
+    border: 1px solid #00FF00;
+    color: #00FF00;
+    padding: 10px 15px;
+    font-family: 'Fira Code', monospace;
+    font-weight: bold;
+    cursor: pointer;
+    text-decoration: none;
+    font-size: 12px;
+}
+
+.btn-reclame:hover,.btn-virus:hover {
+    background-color: #00FF00;
+    color: #000000;
+    box-shadow: 0 0 15px #00FF00;
+}

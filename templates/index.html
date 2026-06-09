@@ -1,288 +1,304 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="pt-br">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GolpeRadar - Threat Scanner</title>
+    <title>GolpeRadar v2.5 - Matrix Mode</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;700&display=swap');
         
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        
-        body { 
-            font-family: 'Orbitron', monospace; 
-            background: #0a0a0a; 
-            color: #00ff41;
-            min-height: 100vh;
-            background-image: 
-                radial-gradient(circle at 20% 50%, #001a00 0%, transparent 50%),
-                radial-gradient(circle at 80% 20%, #1a0000 0%, transparent 50%);
+        body {
+            background-color: #000000;
+            color: #00FF00;
+            font-family: 'Fira Code', monospace;
+            text-align: center;
+            padding: 50px;
             overflow-x: hidden;
         }
         
-        .scan-line {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 2px;
-            background: #00ff41;
-            box-shadow: 0 0 10px #00ff41;
-            animation: scan 3s linear infinite;
-            z-index: 1000;
-        }
-        
-        @keyframes scan {
-            0% { top: 0%; opacity: 1; }
-            100% { top: 100%; opacity: 0; }
-        }
-        
-        .container { 
-            max-width: 700px; 
-            margin: 0 auto; 
-            padding: 40px 20px;
-            position: relative;
-            z-index: 1;
-        }
-        
         h1 { 
-            font-size: 3rem;
-            font-weight: 900;
-            text-align: center;
-            margin-bottom: 10px;
-            text-shadow: 0 0 20px #00ff41;
-            animation: flicker 2s infinite alternate;
+            color: #00FF00; 
+            text-shadow: 0 0 10px #00FF00;
+            animation: glitch 2s infinite;
         }
         
-        @keyframes flicker {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.8; }
+        @keyframes glitch {
+            0%, 100% { text-shadow: 0 0 10px #00FF00; }
+            50% { text-shadow: 0 0 20px #00FF00, 0 0 30px #00FF00; }
         }
         
-        .subtitle {
-            text-align: center;
-            color: #888;
-            margin-bottom: 40px;
-            font-size: 0.9rem;
-            letter-spacing: 2px;
+        input[type="text"] {
+            background-color: #0a0a0a;
+            border: 1px solid #00FF00;
+            color: #00FF00;
+            padding: 12px;
+            width: 400px;
+            font-family: 'Fira Code', monospace;
+            box-shadow: 0 0 5px #00FF00;
         }
         
-        .input-box {
-            background: rgba(0, 255, 65, 0.05);
-            border: 1px solid #00ff41;
-            border-radius: 0;
-            padding: 30px;
-            margin-bottom: 30px;
-            box-shadow: 0 0 30px rgba(0, 255, 65, 0.2);
-        }
-        
-        input { 
-            width: 100%; 
-            padding: 15px; 
-            background: #000;
-            border: 1px solid #00ff41;
-            color: #00ff41;
-            font-family: 'Orbitron', monospace;
-            font-size: 14px;
-            margin-bottom: 15px;
-        }
-        
-        input:focus {
-            outline: none;
-            box-shadow: 0 0 15px #00ff41;
-        }
-        
-        button { 
-            width: 100%;
-            padding: 15px; 
-            background: #00ff41;
-            color: #000;
+        button {
+            background-color: #00FF00;
             border: none;
-            font-family: 'Orbitron', monospace;
-            font-weight: 700;
-            font-size: 16px;
+            color: #000000;
+            padding: 12px 25px;
+            font-family: 'Fira Code', monospace;
+            font-weight: bold;
             cursor: pointer;
+            margin-left: 10px;
             transition: all 0.3s;
-            text-transform: uppercase;
         }
         
         button:hover {
-            background: #000;
-            color: #00ff41;
-            box-shadow: 0 0 20px #00ff41;
+            background-color: #00cc00;
+            box-shadow: 0 0 20px #00FF00;
+            transform: scale(1.05);
         }
         
         .resultado {
-            background: rgba(0, 0, 0, 0.8);
-            border: 1px solid #333;
-            padding: 30px;
-            margin-top: 20px;
+            margin-top: 40px;
+            text-align: left;
+            display: inline-block;
+            border: 1px solid #00FF00;
+            padding: 25px;
+            background-color: #0a0a0a;
+            max-width: 650px;
+            box-shadow: 0 0 20px rgba(0, 255, 0, 0.3);
+        }
+        
+        .risco-seguro { color: #00FF00; text-shadow: 0 0 10px #00FF00; }
+        .risco-baixo { color: #adff2f; text-shadow: 0 0 10px #adff2f; }
+        .risco-medio { color: #ffff00; text-shadow: 0 0 10px #ffff00; }
+        .risco-alto { 
+            color: #ff0000; 
+            text-shadow: 0 0 10px #ff0000;
+            animation: pulse-red 1s infinite;
+        }
+        
+        @keyframes pulse-red {
+            0%, 100% { text-shadow: 0 0 10px #ff0000; }
+            50% { text-shadow: 0 0 20px #ff0000, 0 0 30px #ff0000; }
+        }
+        
+        .alerta-phishing {
+            color: #ffff00; 
+            text-shadow: 0 0 10px #ffff00; 
+            font-weight: bold; 
+            margin: 15px 0;
+            background-color: #1a1a00;
+            padding: 12px;
+            border: 1px solid #ffff00;
+            animation: blink 1.5s infinite;
+        }
+        
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+        
+        .botoes-extras { margin-top: 20px; display: flex; gap: 10px; flex-wrap: wrap; }
+        
+        .btn-reclame, .btn-virus, .btn-pdf {
+            background-color: #0a0a0a;
+            border: 1px solid #00FF00;
+            color: #00FF00;
+            padding: 10px 15px;
+            font-family: 'Fira Code', monospace;
+            font-weight: bold;
+            cursor: pointer;
+            text-decoration: none;
+            font-size: 12px;
+            transition: all 0.3s;
+        }
+        
+        .btn-reclame:hover, .btn-virus:hover, .btn-pdf:hover {
+            background-color: #00FF00;
+            color: #000000;
+            box-shadow: 0 0 15px #00FF00;
+        }
+        
+        #loading {
             display: none;
+            margin-top: 30px;
+            font-size: 18px;
         }
         
-        .resultado.perigoso {
-            border-color: #ff0000;
-            box-shadow: 0 0 30px rgba(255, 0, 0, 0.5);
-            animation: alert 0.5s infinite;
-        }
-        
-        .resultado.seguro {
-            border-color: #00ff41;
-            box-shadow: 0 0 30px rgba(0, 255, 65, 0.5);
-        }
-        
-        .resultado.atencao {
-            border-color: #ffaa00;
-            box-shadow: 0 0 30px rgba(255, 170, 0, 0.5);
-        }
-        
-        @keyframes alert {
-            0%, 100% { border-color: #ff0000; }
-            50% { border-color: #800000; }
-        }
-        
-        .status {
-            font-size: 2rem;
-            font-weight: 900;
-            text-align: center;
-            margin-bottom: 20px;
-        }
-        
-        .status.perigoso { color: #ff0000; text-shadow: 0 0 20px #ff0000; }
-        .status.seguro { color: #00ff41; text-shadow: 0 0 20px #00ff41; }
-        .status.atencao { color: #ffaa00; text-shadow: 0 0 20px #ffaa00; }
-        
-        .score-bar {
-            width: 100%;
-            height: 30px;
-            background: #111;
-            border: 1px solid #333;
-            margin: 20px 0;
+        .loading-bar {
+            width: 400px;
+            height: 20px;
+            background-color: #0a0a0a;
+            border: 1px solid #00FF00;
+            margin: 15px auto;
             position: relative;
             overflow: hidden;
         }
         
-        .score-fill {
+        .loading-fill {
             height: 100%;
-            transition: width 1s ease-out;
-            position: relative;
+            background: linear-gradient(90deg, #00FF00, #00cc00);
+            width: 0%;
+            transition: width 0.1s;
+            box-shadow: 0 0 10px #00FF00;
         }
         
-        .score-fill.perigoso { background: #ff0000; box-shadow: 0 0 20px #ff0000; }
-        .score-fill.seguro { background: #00ff41; box-shadow: 0 0 20px #00ff41; }
-        .score-fill.atencao { background: #ffaa00; box-shadow: 0 0 20px #ffaa00; }
-        
-        .score-text {
-            position: absolute;
-            width: 100%;
-            text-align: center;
-            line-height: 30px;
-            font-weight: 700;
-            color: #fff;
-            text-shadow: 0 0 5px #000;
+        .matrix-char {
+            position: fixed;
+            color: #00FF00;
+            font-size: 14px;
+            animation: fall linear infinite;
+            opacity: 0.3;
+            z-index: -1;
         }
         
-        .avisos {
-            margin-top: 20px;
-        }
-        
-        .avisos li {
-            list-style: none;
-            padding: 10px;
-            margin: 5px 0;
-            background: rgba(255, 0, 0, 0.1);
-            border-left: 3px solid #ff0000;
+        @keyframes fall {
+            to { transform: translateY(100vh); }
         }
     </style>
 </head>
 <body>
-    <div class="scan-line"></div>
-    <div class="container">
-        <h1>☠️ GOLPERADAR ☠️</h1>
-        <p class="subtitle">[ THREAT DETECTION SYSTEM v1.0 ]</p>
-        
-        <div class="input-box">
-            <input type="text" id="url" placeholder="COLE A URL ALVO AQUI...">
-            <button onclick="analisar()">[ INICIAR SCAN ]</button>
+
+    <h1>🛡️ GOLPERADAR v2.5 - MATRIX MODE</h1>
+    <p>>> Analisando camadas de segurança reais. Não baseado em "achismo".</p>
+
+    <form method="POST" id="scanForm">
+        <input 
+            type="text" 
+            name="url" 
+            id="urlInput"
+            placeholder="Cole a URL suspeita aqui... Ex: uol.com.br" 
+            required
+            value="{{ request.form.url if request.form.url }}"
+        >
+        <button type="submit" id="scanBtn">ESCANEAR AGORA</button>
+    </form>
+
+    <div id="loading">
+        <p id="loadingText">>> INICIANDO PROTOCOLO DE VARREDURA...</p>
+        <div class="loading-bar">
+            <div class="loading-fill" id="loadingFill"></div>
         </div>
-        
-        <div id="resultado" class="resultado">
-            <div id="status" class="status"></div>
-            <div class="score-bar">
-                <div id="score-fill" class="score-fill">
-                    <div id="score-text" class="score-text"></div>
-                </div>
-            </div>
-            <div class="avisos">
-                <ul id="avisos-list"></ul>
-            </div>
-        </div>
+        <p id="loadingPercent">0%</p>
     </div>
 
+    {% if resultado %}
+    <div class="resultado" id="resultadoDiv">
+        <h2>>>> RELATÓRIO DE AMEAÇA:</h2>
+        <p><b>URL Analisada:</b> <span id="urlAnalisada">{{ resultado.url }}</span></p>
+        <p><b>Domínio Raiz:</b> <span id="dominioRaiz">{{ resultado.dominio }}</span></p>
+        <p><b>Idade do Domínio:</b> <span id="idadeDominio">{{ resultado.idade_dominio }}</span></p>
+        <p><b>SSL Válido:</b> <span id="sslValido">{{ resultado.ssl_valido }}</span></p>
+        <p><b>IP Real:</b> <span id="ipReal">{{ resultado.ip_real }}</span></p>
+        <p><b>Redirecionamentos:</b> <span id="redirecionamentos">{{ resultado.redirecionamentos }}</span></p>
+        <hr>
+        <h2 class="{{ resultado.classe_risco }}" id="riscoFinal">
+            RISCO: {{ resultado.risco }} - {{ resultado.porcentagem }}
+        </h2>
+        
+        {% if resultado.alerta_phishing %}
+        <div class="alerta-phishing">
+            ⚠️ {{ resultado.alerta_phishing }}
+        </div>
+        {% endif %}
+        
+        <div class="botoes-extras">
+            <a href="{{ resultado.link_reclame_aqui }}" target="_blank" class="btn-reclame">
+                VER NO RECLAME AQUI
+            </a>
+            <a href="https://www.virustotal.com/gui/domain/{{ resultado.dominio }}" target="_blank" class="btn-virus">
+                CHECAR NO VIRUSTOTAL
+            </a>
+            <button onclick="gerarPDF()" class="btn-pdf">
+                EXPORTAR PDF
+            </button>
+        </div>
+    </div>
+    {% endif %}
+
     <script>
-        async function analisar() {
-            const url = document.getElementById('url').value;
-            const btn = document.querySelector('button');
-            btn.textContent = '[ ESCANEANDO... ]';
-            btn.disabled = true;
-            
-            try {
-                const response = await fetch('/analisar', {
-                    method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({url: url})
-                });
-                
-                const data = await response.json();
-                const resultado = document.getElementById('resultado');
-                const status = document.getElementById('status');
-                const scoreFill = document.getElementById('score-fill');
-                const scoreText = document.getElementById('score-text');
-                const avisosList = document.getElementById('avisos-list');
-                
-                // Define classe por status
-                resultado.className = 'resultado';
-                if (data.status === 'Perigoso') {
-                    resultado.classList.add('perigoso');
-                    status.className = 'status perigoso';
-                    status.innerHTML = '☠️ AMEAÇA DETECTADA ☠️';
-                    scoreFill.className = 'score-fill perigoso';
-                } else if (data.status === 'Seguro') {
-                    resultado.classList.add('seguro');
-                    status.className = 'status seguro';
-                    status.innerHTML = '🛡️ SISTEMA SEGURO 🛡️';
-                    scoreFill.className = 'score-fill seguro';
-                } else {
-                    resultado.classList.add('atencao');
-                    status.className = 'status atencao';
-                    status.innerHTML = '⚠️ ALERTA DE RISCO ⚠️';
-                    scoreFill.className = 'score-fill atencao';
-                }
-                
-                // Anima barra
-                setTimeout(() => {
-                    scoreFill.style.width = data.score + '%';
-                    scoreText.textContent = `THREAT LEVEL: ${data.score}/100`;
-                }, 100);
-                
-                // Avisos
-                avisosList.innerHTML = '';
-                data.avisos.forEach(aviso => {
-                    const li = document.createElement('li');
-                    li.textContent = `> ${aviso}`;
-                    avisosList.appendChild(li);
-                });
-                
-                resultado.style.display = 'block';
-                
-            } catch (error) {
-                alert('ERRO NO SCAN: ' + error);
+        // Som de bip - base64
+        const bipSound = new Audio("data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjg1Njc4OFNWWEhIQEFCQkRFRkdISUpLTE1OT1BRUlNUVVZXWFlaW1xdXl9cX2FhYmNkZWZnaGlqa2xtbm9wcXJzdHV2d3h5e3x9fn+AgYKDhIWGh4iJiouMjY6PkJGSk5SVlpeYmZqbnJ2en6ChoqOkpaanqKmqq6ytrq+wsbKztLW2t7i5uru8vL2+vsDBwsPExcbHyMnKy8zNzs/Q0dLT1NXW19jZ2tvc3d7f4OHi4+Tl5ufo6err7O3u7/Dx8vP09fb3+Pn6+/z9/v8AAQIDBAUGBwgJCgsMDQ4PEBESExQVFhcYGRobHB0eHyAhIiMkJSYnKCkqKywtLi8wMTIzNDU2Nzg5Ojs8PT4/QEFCQ0RFRkdISUpLTE1OT1BRUlNUVVZXWFlaW1xdXl9gYGBiYmJj");
+        
+        // Matrix rain effect
+        function criarMatrixRain() {
+            const chars = "01アイウエオカキクケコサシスセソタチツテトナニヌネノハヒフヘホマミムメモヤユヨラリルレロワヲン";
+            for(let i = 0; i < 30; i++) {
+                const char = document.createElement('div');
+                char.className = 'matrix-char';
+                char.textContent = chars[Math.floor(Math.random() * chars.length)];
+                char.style.left = Math.random() * 100 + 'vw';
+                char.style.animationDuration = (Math.random() * 3 + 2) + 's';
+                char.style.animationDelay = Math.random() * 2 + 's';
+                document.body.appendChild(char);
             }
+        }
+        criarMatrixRain();
+
+        // Loading animation
+        document.getElementById('scanForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            document.getElementById('loading').style.display = 'block';
+            document.getElementById('scanBtn').disabled = true;
             
-            btn.textContent = '[ INICIAR SCAN ]';
-            btn.disabled = false;
+            let progress = 0;
+            const steps = [
+                ">> CONECTANDO AO SERVIDOR...",
+                ">> RESOLVENDO DNS...",
+                ">> VERIFICANDO SSL...",
+                ">> ANALISANDO WHOIS...",
+                ">> CHECANDO BLACKLISTS...",
+                ">> CALCULANDO VETORES DE RISCO...",
+                ">> FINALIZANDO RELATÓRIO..."
+            ];
+            
+            const interval = setInterval(() => {
+                progress += Math.random() * 15;
+                if(progress > 100) progress = 100;
+                
+                document.getElementById('loadingFill').style.width = progress + '%';
+                document.getElementById('loadingPercent').textContent = Math.floor(progress) + '%';
+                document.getElementById('loadingText').textContent = steps[Math.floor(progress / 14)];
+                
+                if(progress >= 100) {
+                    clearInterval(interval);
+                    setTimeout(() => {
+                        e.target.submit();
+                    }, 500);
+                }
+            }, 200);
+        });
+
+        // Toca som se for ALTO
+        {% if resultado and resultado.risco == 'ALTO' %}
+        window.addEventListener('load', () => {
+            bipSound.play();
+        });
+        {% endif %}
+
+        // Gerar PDF
+        function gerarPDF() {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+            
+            doc.setFont("courier");
+            doc.setFontSize(16);
+            doc.text("GOLPERADAR v2.5 - RELATORIO DE AMEACA", 20, 20);
+            
+            doc.setFontSize(12);
+            let y = 40;
+            doc.text(`URL: ${document.getElementById('urlAnalisada').textContent}`, 20, y); y += 10;
+            doc.text(`Dominio: ${document.getElementById('dominioRaiz').textContent}`, 20, y); y += 10;
+            doc.text(`Idade: ${document.getElementById('idadeDominio').textContent}`, 20, y); y += 10;
+            doc.text(`SSL: ${document.getElementById('sslValido').textContent}`, 20, y); y += 10;
+            doc.text(`IP: ${document.getElementById('ipReal').textContent}`, 20, y); y += 10;
+            doc.text(`Redirecionamentos: ${document.getElementById('redirecionamentos').textContent}`, 20, y); y += 20;
+            
+            doc.setFontSize(14);
+            doc.text(document.getElementById('riscoFinal').textContent, 20, y);
+            
+            doc.save(`GolpeRadar_${document.getElementById('dominioRaiz').textContent}.pdf`);
         }
     </script>
+
 </body>
 </html>
-
